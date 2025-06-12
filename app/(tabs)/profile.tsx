@@ -1,308 +1,422 @@
-import { useAuth } from "@/contexts/AuthContext";
-import { Colors } from "@/styles/colors";
-import { Spacing } from "@/styles/spacing";
-import { Typography } from "@/styles/typography";
-import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+"use client";
+
 import {
-  ActivityIndicator,
+  Camera,
+  Edit3,
+  HelpCircle,
+  Info,
+  LogOut,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Settings,
+  User,
+} from "lucide-react-native";
+import { useEffect, useState } from "react";
+import {
   Alert,
   Image,
+  RefreshControl,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import Button from "../../components/common/Button";
+import Input from "../../components/common/Input";
+import { Colors, Typography } from "../../constants/Colors";
+import { useAuth } from "../../contexts/AuthContext";
+import { apiService } from "../../services/api";
+import type { ApiListing } from "../../types/api";
+
+interface UserStats {
+  wallet_balance: number;
+  total_listings: number;
+  active_listings: number;
+  sold_listings: number;
+  total_sales_amount: number;
+}
 
 export default function ProfileScreen() {
-  const { user, token, logout, updateUser } = useAuth();
-  const [editing, setEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const { user, logout, updateUser, refreshUser } = useAuth();
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+  const [editData, setEditData] = useState({
     full_name: user?.full_name || "",
     phone: user?.phone || "",
     whatsapp: user?.whatsapp || "",
     city: user?.city || "",
   });
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+  useEffect(() => {
+    fetchUserStats();
+  }, []);
 
-    if (!result.canceled) {
-      uploadProfileImage(result.assets[0].uri);
+  const fetchUserStats = async () => {
+    try {
+      // Fetch user's listings to calculate stats
+      const myListings: ApiListing[] = await apiService.getMyListings();
+
+      // Calculate stats from listings
+      const totalListings = myListings.length;
+      const activeListings = myListings.filter(
+        (listing) => listing.status === "active"
+      ).length;
+      const soldListings = myListings.filter(
+        (listing) => listing.status === "sold"
+      ).length;
+      const totalSalesAmount = myListings
+        .filter((listing) => listing.status === "sold")
+        .reduce((sum, listing) => sum + listing.price, 0);
+
+      setStats({
+        wallet_balance: user?.wallet_balance || 0,
+        total_listings: totalListings,
+        active_listings: activeListings,
+        sold_listings: soldListings,
+        total_sales_amount: totalSalesAmount,
+      });
+    } catch (error: any) {
+      console.error("Error fetching user stats:", error);
+      // Use fallback stats if API fails
+      setStats({
+        wallet_balance: user?.wallet_balance || 0,
+        total_listings: 0,
+        active_listings: 0,
+        sold_listings: 0,
+        total_sales_amount: 0,
+      });
+    } finally {
+      setRefreshing(false);
     }
   };
 
-  const uploadProfileImage = async (imageUri: string) => {
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", {
-        uri: imageUri,
-        type: "image/jpeg",
-        name: "profile.jpg",
-      } as any);
-
-      const response = await fetch(
-        "https://trash4app-be.onrender.com/profile/upload-image",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        updateUser({ profile_image: data.image_url });
-        Alert.alert("Success", "Profile image updated successfully!");
-      } else {
-        Alert.alert("Error", data.detail || "Failed to upload image");
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to upload image");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateProfile = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        "https://trash4app-be.onrender.com/profile",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        updateUser(data.user);
-        setEditing(false);
-        Alert.alert("Success", "Profile updated successfully!");
-      } else {
-        Alert.alert("Error", data.detail || "Failed to update profile");
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to update profile");
-    } finally {
-      setLoading(false);
-    }
+  const onRefresh = () => {
+    setRefreshing(true);
+    Promise.all([refreshUser(), fetchUserStats()]);
   };
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Logout", style: "destructive", onPress: logout },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await logout();
+          } catch (error) {
+            console.error("Logout error:", error);
+          }
+        },
+      },
     ]);
+  };
+
+  const handleUpdateProfile = async () => {
+    try {
+      await apiService.updateProfile(editData);
+      updateUser(editData);
+      setShowEditProfile(false);
+      Alert.alert("Success", "Profile updated successfully");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to update profile");
+    }
+  };
+
+  const updateEditData = (field: string, value: string) => {
+    setEditData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const formatAmount = (amount: number) => {
+    return `₦${amount.toLocaleString()}`;
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerSubtitle}>
+          Manage your account and preferences
+        </Text>
+      </View>
+
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={pickImage}
-            style={styles.profileImageContainer}
-          >
-            {user?.profile_image ? (
-              <Image
-                source={{ uri: user.profile_image }}
-                style={styles.profileImage}
-              />
-            ) : (
-              <View style={styles.profileImagePlaceholder}>
-                <Text style={styles.profileImageIcon}>👤</Text>
-              </View>
-            )}
-            {loading && (
-              <View style={styles.profileImageLoading}>
-                <ActivityIndicator color="white" />
-              </View>
-            )}
-            <View style={styles.profileImageBadge}>
-              <Text style={styles.profileImageBadgeText}>📷</Text>
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.profileName}>{user?.full_name}</Text>
-          <Text style={styles.profileRole}>
-            {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
-          </Text>
-        </View>
-
-        {/* Profile Form */}
-        <View style={styles.formContainer}>
-          <View style={styles.formHeader}>
-            <Text style={styles.formTitle}>Profile Information</Text>
-            <TouchableOpacity
-              onPress={() => (editing ? updateProfile() : setEditing(true))}
-              disabled={loading}
-              style={styles.editButton}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" size="small" />
+        {/* Profile Card */}
+        <View style={styles.profileCard}>
+          <View style={styles.profileHeader}>
+            <View style={styles.avatarContainer}>
+              {user?.profile_image ? (
+                <Image
+                  source={{ uri: user.profile_image }}
+                  style={styles.avatar}
+                />
               ) : (
-                <Text style={styles.editButtonText}>
-                  {editing ? "Save" : "Edit"}
-                </Text>
+                <View style={styles.avatarPlaceholder}>
+                  <User size={32} color={Colors.gray400} />
+                </View>
               )}
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.formFields}>
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Full Name</Text>
-              <TextInput
-                value={formData.full_name}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, full_name: text }))
-                }
-                editable={editing}
-                style={[
-                  styles.fieldInput,
-                  !editing && styles.fieldInputDisabled,
-                ]}
-              />
+              <TouchableOpacity style={styles.cameraButton}>
+                <Camera size={16} color={Colors.white} />
+              </TouchableOpacity>
             </View>
-
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Email</Text>
-              <TextInput
-                value={user?.email}
-                editable={false}
-                style={[styles.fieldInput, styles.fieldInputDisabled]}
-              />
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{user?.full_name}</Text>
+              <Text style={styles.profileEmail}>{user?.email}</Text>
+              <View style={styles.profileBadge}>
+                <Text style={styles.profileBadgeText}>
+                  {user?.role?.toUpperCase()}
+                </Text>
+              </View>
             </View>
-
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Phone</Text>
-              <TextInput
-                value={formData.phone}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, phone: text }))
-                }
-                editable={editing}
-                keyboardType="phone-pad"
-                style={[
-                  styles.fieldInput,
-                  !editing && styles.fieldInputDisabled,
-                ]}
-              />
-            </View>
-
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>WhatsApp</Text>
-              <TextInput
-                value={formData.whatsapp}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, whatsapp: text }))
-                }
-                editable={editing}
-                keyboardType="phone-pad"
-                placeholder="e.g., +2348012345678"
-                style={[
-                  styles.fieldInput,
-                  !editing && styles.fieldInputDisabled,
-                ]}
-              />
-            </View>
-
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>City</Text>
-              <TextInput
-                value={formData.city}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, city: text }))
-                }
-                editable={editing}
-                placeholder="e.g., Lagos, Abuja"
-                style={[
-                  styles.fieldInput,
-                  !editing && styles.fieldInputDisabled,
-                ]}
-              />
-            </View>
-          </View>
-
-          {editing && (
             <TouchableOpacity
-              onPress={() => {
-                setEditing(false);
-                setFormData({
-                  full_name: user?.full_name || "",
-                  phone: user?.phone || "",
-                  whatsapp: user?.whatsapp || "",
-                  city: user?.city || "",
-                });
-              }}
-              style={styles.cancelButton}
+              style={styles.editButton}
+              onPress={() => setShowEditProfile(true)}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Edit3 size={20} color={Colors.primary} />
             </TouchableOpacity>
-          )}
+          </View>
+
+          <View style={styles.profileDetails}>
+            <View style={styles.profileDetailItem}>
+              <Phone size={16} color={Colors.gray500} />
+              <Text style={styles.profileDetailText}>
+                {user?.phone || "Not provided"}
+              </Text>
+            </View>
+            <View style={styles.profileDetailItem}>
+              <MessageCircle size={16} color={Colors.gray500} />
+              <Text style={styles.profileDetailText}>
+                {user?.whatsapp || "Not provided"}
+              </Text>
+            </View>
+            <View style={styles.profileDetailItem}>
+              <MapPin size={16} color={Colors.gray500} />
+              <Text style={styles.profileDetailText}>
+                {user?.city || "Not provided"}
+              </Text>
+            </View>
+          </View>
         </View>
 
-        {/* Wallet Info */}
-        <View style={styles.walletContainer}>
-          <Text style={styles.walletTitle}>Wallet Balance</Text>
-          <Text style={styles.walletBalance}>
-            ₦{user?.wallet_balance?.toLocaleString() || "0"}
-          </Text>
+        {/* Quick Stats */}
+        <View style={styles.statsSection}>
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>
+                {formatAmount(stats?.wallet_balance || 0)}
+              </Text>
+              <Text style={styles.statLabel}>Wallet Balance</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>{stats?.sold_listings || 0}</Text>
+              <Text style={styles.statLabel}>Items Sold</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>
+                {stats?.active_listings || 0}
+              </Text>
+              <Text style={styles.statLabel}>Active Listings</Text>
+            </View>
+          </View>
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>
+                {stats?.total_listings || 0}
+              </Text>
+              <Text style={styles.statLabel}>Total Listings</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>
+                {formatAmount(stats?.total_sales_amount || 0)}
+              </Text>
+              <Text style={styles.statLabel}>Total Sales</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>
+                {stats?.total_listings && stats?.sold_listings
+                  ? Math.round(
+                      (stats.sold_listings / stats.total_listings) * 100
+                    )
+                  : 0}
+                %
+              </Text>
+              <Text style={styles.statLabel}>Success Rate</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Actions */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionItem}>
-            <View style={styles.actionLeft}>
-              <Text style={styles.actionIcon}>📋</Text>
-              <Text style={styles.actionText}>My Listings</Text>
+        {/* Edit Profile Modal */}
+        {showEditProfile && (
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <Text style={styles.modalSubtitle}>
+                Update your personal information
+              </Text>
             </View>
-            <Text style={styles.actionArrow}>›</Text>
+
+            <Input
+              label="Full Name"
+              value={editData.full_name}
+              onChangeText={(value) => updateEditData("full_name", value)}
+              placeholder="Enter your full name"
+            />
+
+            <Input
+              label="Phone Number"
+              value={editData.phone}
+              onChangeText={(value) => updateEditData("phone", value)}
+              placeholder="+234 800 123 4567"
+              keyboardType="phone-pad"
+            />
+
+            <Input
+              label="WhatsApp Number"
+              value={editData.whatsapp}
+              onChangeText={(value) => updateEditData("whatsapp", value)}
+              placeholder="+234 800 123 4567"
+              keyboardType="phone-pad"
+            />
+
+            <Input
+              label="City"
+              value={editData.city}
+              onChangeText={(value) => updateEditData("city", value)}
+              placeholder="Enter your city"
+            />
+
+            <View style={styles.modalActions}>
+              <Button
+                title="Cancel"
+                onPress={() => setShowEditProfile(false)}
+                variant="outline"
+                size="medium"
+                style={styles.modalCancelButton}
+              />
+              <Button
+                title="Save Changes"
+                onPress={handleUpdateProfile}
+                variant="primary"
+                size="medium"
+                style={styles.modalSaveButton}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Menu Items */}
+        <View style={styles.menuSection}>
+          <TouchableOpacity style={styles.menuItem}>
+            <View style={styles.menuItemLeft}>
+              <Settings size={20} color={Colors.gray600} />
+              <Text style={styles.menuItemText}>Settings</Text>
+            </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionItem}>
-            <View style={styles.actionLeft}>
-              <Text style={styles.actionIcon}>📞</Text>
-              <Text style={styles.actionText}>Support</Text>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => setShowSupport(true)}
+          >
+            <View style={styles.menuItemLeft}>
+              <HelpCircle size={20} color={Colors.gray600} />
+              <Text style={styles.menuItemText}>Help & Support</Text>
             </View>
-            <Text style={styles.actionArrow}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionItem}>
-            <View style={styles.actionLeft}>
-              <Text style={styles.actionIcon}>ℹ️</Text>
-              <Text style={styles.actionText}>About</Text>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => setShowAbout(true)}
+          >
+            <View style={styles.menuItemLeft}>
+              <Info size={20} color={Colors.gray600} />
+              <Text style={styles.menuItemText}>About</Text>
             </View>
-            <Text style={styles.actionArrow}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.menuItem, styles.logoutItem]}
+            onPress={handleLogout}
+          >
+            <View style={styles.menuItemLeft}>
+              <LogOut size={20} color={Colors.error} />
+              <Text style={[styles.menuItemText, styles.logoutText]}>
+                Logout
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
 
-        {/* Logout Button */}
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <Text style={styles.logoutButtonText}>Logout</Text>
-        </TouchableOpacity>
+        {/* Support Modal */}
+        {showSupport && (
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Help & Support</Text>
+              <Text style={styles.modalSubtitle}>
+                Get help with your account
+              </Text>
+            </View>
+
+            <View style={styles.supportContent}>
+              <Text style={styles.supportText}>
+                Need help? Contact our support team at support@trash4cash.ng or
+                call +234 800 TRASH4CASH
+              </Text>
+              <Text style={styles.supportText}>
+                We're available Monday to Friday, 9AM to 6PM WAT to assist you
+                with any questions or issues.
+              </Text>
+            </View>
+
+            <Button
+              title="Close"
+              onPress={() => setShowSupport(false)}
+              variant="primary"
+              size="medium"
+            />
+          </View>
+        )}
+
+        {/* About Modal */}
+        {showAbout && (
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>About Trash4Cash</Text>
+              <Text style={styles.modalSubtitle}>Version 1.0.0</Text>
+            </View>
+
+            <View style={styles.aboutContent}>
+              <Text style={styles.aboutText}>
+                Trash4Cash is Nigeria's leading platform for buying and selling
+                recyclable materials. We connect buyers and sellers to create a
+                sustainable circular economy.
+              </Text>
+              <Text style={styles.aboutText}>
+                Our mission is to reduce waste and create economic opportunities
+                by making recycling accessible to everyone.
+              </Text>
+            </View>
+
+            <Button
+              title="Close"
+              onPress={() => setShowAbout(false)}
+              variant="primary"
+              size="medium"
+            />
+          </View>
+        )}
+
+        <View style={styles.bottomSpacing} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -311,184 +425,210 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
+    backgroundColor: Colors.background,
   },
   header: {
-    alignItems: "center",
-    marginBottom: Spacing.xl,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    marginTop: 50,
   },
-  profileImageContainer: {
+  headerTitle: {
+    ...Typography.h2,
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    ...Typography.body,
+    color: Colors.gray600,
+  },
+  profileCard: {
+    backgroundColor: Colors.white,
+    marginHorizontal: 20,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.gray200,
+  },
+  profileHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  avatarContainer: {
     position: "relative",
+    marginRight: 16,
   },
-  profileImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
   },
-  profileImagePlaceholder: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: Colors.gray300,
+  avatarPlaceholder: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.gray100,
     alignItems: "center",
     justifyContent: "center",
   },
-  profileImageIcon: {
-    fontSize: 32,
-  },
-  profileImageLoading: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: 48,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  profileImageBadge: {
+  cameraButton: {
     position: "absolute",
     bottom: 0,
     right: 0,
-    backgroundColor: Colors.primary,
+    width: 24,
+    height: 24,
     borderRadius: 12,
-    padding: Spacing.xs,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  profileImageBadgeText: {
-    color: Colors.white,
-    fontSize: 12,
+  profileInfo: {
+    flex: 1,
   },
   profileName: {
     ...Typography.h3,
-    color: Colors.accent,
-    marginTop: Spacing.sm,
+    marginBottom: 4,
   },
-  profileRole: {
-    ...Typography.bodySmall,
+  profileEmail: {
+    ...Typography.body,
     color: Colors.gray600,
+    marginBottom: 8,
   },
-  formContainer: {
-    backgroundColor: Colors.white,
+  profileBadge: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 12,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
+    alignSelf: "flex-start",
   },
-  formHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.md,
-  },
-  formTitle: {
-    ...Typography.h4,
-    color: Colors.accent,
+  profileBadgeText: {
+    ...Typography.caption,
+    color: Colors.white,
+    fontFamily: "Inter-SemiBold",
   },
   editButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    padding: 8,
+  },
+  profileDetails: {
+    gap: 12,
+  },
+  profileDetailItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  profileDetailText: {
+    ...Typography.body,
+    color: Colors.gray600,
+  },
+  statsSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  statsGrid: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 12,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: Colors.white,
     borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.gray200,
   },
-  editButtonText: {
-    ...Typography.bodySmall,
-    color: Colors.white,
+  statNumber: {
+    ...Typography.h3,
+    color: Colors.primary,
+    marginBottom: 4,
   },
-  formFields: {
-    gap: Spacing.md,
-  },
-  field: {
-    marginBottom: Spacing.md,
-  },
-  fieldLabel: {
+  statLabel: {
     ...Typography.caption,
     color: Colors.gray600,
-    marginBottom: Spacing.xs,
+    textAlign: "center",
   },
-  fieldInput: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    ...Typography.body,
-    borderColor: Colors.gray300,
-    backgroundColor: Colors.white,
+  menuSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
-  fieldInputDisabled: {
-    borderColor: Colors.gray200,
-    backgroundColor: Colors.gray50,
-    color: Colors.gray500,
-  },
-  cancelButton: {
-    marginTop: Spacing.md,
-    backgroundColor: Colors.gray300,
-    paddingVertical: Spacing.sm,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  cancelButtonText: {
-    ...Typography.body,
-    color: Colors.gray700,
-  },
-  walletContainer: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  walletTitle: {
-    ...Typography.h4,
-    color: Colors.accent,
-    marginBottom: Spacing.sm,
-  },
-  walletBalance: {
-    ...Typography.h2,
-    color: Colors.primary,
-  },
-  actionsContainer: {
-    gap: Spacing.sm,
-    marginBottom: Spacing.xl,
-  },
-  actionItem: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: Spacing.md,
+  menuItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Colors.gray200,
   },
-  actionLeft: {
+  menuItemLeft: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
   },
-  actionIcon: {
-    fontSize: 24,
-    marginRight: Spacing.sm,
+  menuItemText: {
+    ...Typography.bodySemiBold,
+    color: Colors.dark,
   },
-  actionText: {
+  logoutItem: {
+    marginTop: 8,
+  },
+  logoutText: {
+    color: Colors.error,
+  },
+  modalCard: {
+    backgroundColor: Colors.white,
+    marginHorizontal: 20,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.gray200,
+  },
+  modalHeader: {
+    marginBottom: 20,
+  },
+  modalTitle: {
+    ...Typography.h3,
+    marginBottom: 4,
+  },
+  modalSubtitle: {
     ...Typography.body,
-    color: Colors.accent,
+    color: Colors.gray600,
   },
-  actionArrow: {
+  modalActions: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+  },
+  modalCancelButton: {
+    flex: 1,
+  },
+  modalSaveButton: {
+    flex: 1,
+  },
+  supportContent: {
+    marginBottom: 20,
+  },
+  supportText: {
     ...Typography.body,
-    color: Colors.gray400,
+    color: Colors.gray600,
+    marginBottom: 12,
+    lineHeight: 20,
   },
-  logoutButton: {
-    backgroundColor: Colors.error,
-    borderRadius: 12,
-    padding: Spacing.md,
-    alignItems: "center",
-    marginBottom: Spacing.xl,
+  aboutContent: {
+    marginBottom: 20,
   },
-  logoutButtonText: {
-    ...Typography.button,
-    color: Colors.white,
+  aboutText: {
+    ...Typography.body,
+    color: Colors.gray600,
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  bottomSpacing: {
+    height: 20,
   },
 });

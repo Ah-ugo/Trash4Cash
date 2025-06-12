@@ -1,59 +1,45 @@
-import { Colors } from "@/styles/colors";
-import { Spacing } from "@/styles/spacing";
-import { Typography } from "@/styles/typography";
-import { router } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+"use client";
+import { useRouter } from "expo-router";
+import { SafeAreaView, StyleSheet, Text, View } from "react-native";
+import Button from "../../components/common/Button";
+import { Colors, Typography } from "../../constants/Colors";
 
-export default function AuthWelcomeScreen() {
+export default function WelcomeScreen() {
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Logo/Icon */}
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoIcon}>♻️</Text>
+        <View style={styles.logoSection}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoIcon}>♻️</Text>
+          </View>
+          <Text style={styles.appName}>Trash4Cash</Text>
+          <Text style={styles.tagline}>Turn your trash into cash</Text>
         </View>
 
-        {/* Title */}
-        <Text style={styles.title}>Trash4Cash</Text>
-
-        {/* Subtitle */}
-        <Text style={styles.subtitle}>
-          Turn your trash into cash! Buy and sell recyclable materials with
-          ease.
-        </Text>
-
-        {/* Features */}
-        <View style={styles.featuresContainer}>
-          <View style={styles.feature}>
-            <Text style={styles.featureIcon}>💰</Text>
-            <Text style={styles.featureText}>Earn money from recyclables</Text>
+        <View style={styles.illustrationSection}>
+          <View style={styles.illustration}>
+            <Text style={styles.illustrationIcon}>🗂️💰</Text>
           </View>
-          <View style={styles.feature}>
-            <Text style={styles.featureIcon}>🌍</Text>
-            <Text style={styles.featureText}>Help save the environment</Text>
-          </View>
-          <View style={styles.feature}>
-            <Text style={styles.featureIcon}>📱</Text>
-            <Text style={styles.featureText}>Easy mobile marketplace</Text>
-          </View>
+          <Text style={styles.illustrationText}>
+            Connect with buyers and sellers of recyclable materials in your area
+          </Text>
         </View>
 
-        {/* Buttons */}
-        <View style={styles.buttonsContainer}>
-          <TouchableOpacity
+        <View style={styles.buttonSection}>
+          <Button
+            title="Get Started"
             onPress={() => router.push("/auth/register")}
             style={styles.primaryButton}
-          >
-            <Text style={styles.primaryButtonText}>Get Started</Text>
-          </TouchableOpacity>
+          />
 
-          <TouchableOpacity
+          <Button
+            title="I already have an account"
             onPress={() => router.push("/auth/login")}
+            variant="outline"
             style={styles.secondaryButton}
-          >
-            <Text style={styles.secondaryButtonText}>I Have an Account</Text>
-          </TouchableOpacity>
+          />
         </View>
       </View>
     </SafeAreaView>
@@ -63,79 +49,68 @@ export default function AuthWelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.background,
   },
   content: {
     flex: 1,
-    justifyContent: "center",
+    paddingHorizontal: 24,
+    justifyContent: "space-between",
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  logoSection: {
     alignItems: "center",
-    paddingHorizontal: Spacing.xl,
   },
   logoContainer: {
-    width: 128,
-    height: 128,
-    backgroundColor: Colors.white,
-    borderRadius: 64,
+    width: 100,
+    height: 100,
+    backgroundColor: Colors.primary,
+    borderRadius: 50,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: Spacing.xl,
+    marginBottom: 16,
   },
   logoIcon: {
+    fontSize: 40,
+  },
+  appName: {
+    ...Typography.h1,
+    marginBottom: 8,
+  },
+  tagline: {
+    ...Typography.body,
+    color: Colors.gray600,
+    textAlign: "center",
+  },
+  illustrationSection: {
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  illustration: {
+    width: 120,
+    height: 120,
+    backgroundColor: Colors.gray100,
+    borderRadius: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  illustrationIcon: {
     fontSize: 48,
   },
-  title: {
-    ...Typography.h1,
-    color: Colors.white,
-    textAlign: "center",
-    marginBottom: Spacing.md,
-  },
-  subtitle: {
+  illustrationText: {
     ...Typography.body,
-    color: Colors.white,
+    color: Colors.gray600,
     textAlign: "center",
-    marginBottom: Spacing.xxl,
-    opacity: 0.9,
+    lineHeight: 24,
   },
-  featuresContainer: {
-    width: "100%",
-    marginBottom: Spacing.xxl,
-  },
-  feature: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: Spacing.md,
-  },
-  featureIcon: {
-    fontSize: 24,
-    marginRight: Spacing.sm,
-  },
-  featureText: {
-    ...Typography.body,
-    color: Colors.white,
-  },
-  buttonsContainer: {
-    width: "100%",
-    gap: Spacing.md,
+  buttonSection: {
+    gap: 16,
   },
   primaryButton: {
-    backgroundColor: Colors.white,
-    paddingVertical: Spacing.md,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    ...Typography.button,
-    color: Colors.primary,
+    marginBottom: 0,
   },
   secondaryButton: {
-    borderWidth: 2,
-    borderColor: Colors.white,
-    paddingVertical: Spacing.md,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  secondaryButtonText: {
-    ...Typography.button,
-    color: Colors.white,
+    marginBottom: 0,
   },
 });

@@ -1,4 +1,9 @@
 import { AuthProvider } from "@/contexts/AuthContext";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from "@expo-google-fonts/inter";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
   DarkTheme,
@@ -24,6 +29,9 @@ export default function RootLayout() {
     "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
     "Poppins-Bold": require("../assets/fonts/Poppins-Bold.ttf"),
     "Poppins-Light": require("../assets/fonts/Poppins-Light.ttf"),
+    "Inter-Regular": Inter_400Regular,
+    "Inter-Medium": Inter_500Medium,
+    "Inter-SemiBold": Inter_600SemiBold,
     ...FontAwesome.font,
   });
 
@@ -54,6 +62,7 @@ function RootLayoutNav() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
           <Stack.Screen name="listing" options={{ headerShown: false }} />
+          <Stack.Screen name="my-listings" options={{ headerShown: false }} />
           {/* <Stack.Screen name="modal" options={{ presentation: "modal" }} /> */}
         </Stack>
       </ThemeProvider>

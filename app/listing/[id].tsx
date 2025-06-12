@@ -1,12 +1,19 @@
-import { useAuth } from "@/contexts/AuthContext";
-import { Colors } from "@/styles/colors";
-import { Spacing } from "@/styles/spacing";
-import { Typography } from "@/styles/typography";
+"use client";
+
 import { router, useLocalSearchParams } from "expo-router";
+import {
+  ArrowLeft,
+  MapPin,
+  MessageCircle,
+  Package,
+  Phone,
+  Tag,
+} from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   Image,
   Linking,
   ScrollView,
@@ -16,6 +23,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Button from "../../components/common/Button";
+import { Colors, Typography } from "../../constants/Colors";
+import { useAuth } from "../../contexts/AuthContext";
+import { apiService } from "../../services/api";
+
+const { width: screenWidth } = Dimensions.get("window");
 
 interface Listing {
   _id: string;
@@ -47,19 +60,10 @@ export default function ListingDetailScreen() {
 
   const fetchListing = async () => {
     try {
-      const response = await fetch(
-        `https://trash4app-be.onrender.com/listings/${id}`
-      );
-      const data = await response.json();
-
-      if (response.ok) {
-        setListing(data);
-      } else {
-        Alert.alert("Error", "Listing not found");
-        router.back();
-      }
+      const data = await apiService.getListing(id as string);
+      setListing(data);
     } catch (error) {
-      Alert.alert("Error", "Failed to fetch listing details");
+      Alert.alert("Error", "Listing not found");
       router.back();
     } finally {
       setLoading(false);
@@ -104,27 +108,12 @@ export default function ListingDetailScreen() {
 
     setPurchasing(true);
     try {
-      const response = await fetch(
-        `https://trash4app-be.onrender.com/listings/${listing._id}/purchase`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert("Success", "Purchase completed successfully!", [
-          { text: "OK", onPress: () => router.back() },
-        ]);
-      } else {
-        Alert.alert("Error", data.detail || "Purchase failed");
-      }
-    } catch (error) {
-      Alert.alert("Error", "Purchase failed");
+      await apiService.purchaseListing(listing._id);
+      Alert.alert("Success", "Purchase completed successfully!", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Purchase failed");
     } finally {
       setPurchasing(false);
     }
@@ -181,29 +170,33 @@ export default function ListingDetailScreen() {
     return (
       <SafeAreaView style={styles.errorContainer}>
         <Text style={styles.errorText}>Listing not found</Text>
-        <TouchableOpacity
+        <Button
+          title="Go Back"
           onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Text style={styles.backButtonText}>Go Back</Text>
-        </TouchableOpacity>
+          variant="outline"
+        />
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backButton}
-          >
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-        </View>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <ArrowLeft size={24} color={Colors.dark} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Item Details</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Images */}
         <View style={styles.imageSection}>
           {listing.images && listing.images.length > 0 ? (
@@ -214,8 +207,7 @@ export default function ListingDetailScreen() {
                 showsHorizontalScrollIndicator={false}
                 onMomentumScrollEnd={(event) => {
                   const index = Math.round(
-                    event.nativeEvent.contentOffset.x /
-                      event.nativeEvent.layoutMeasurement.width
+                    event.nativeEvent.contentOffset.x / screenWidth
                   );
                   setCurrentImageIndex(index);
                 }}
@@ -247,7 +239,10 @@ export default function ListingDetailScreen() {
             </>
           ) : (
             <View style={styles.imagePlaceholder}>
-              <Text style={styles.imagePlaceholderText}>📷</Text>
+              <Package size={48} color={Colors.gray400} />
+              <Text style={styles.imagePlaceholderText}>
+                No image available
+              </Text>
             </View>
           )}
         </View>
@@ -260,15 +255,19 @@ export default function ListingDetailScreen() {
             <Text style={styles.price}>₦{listing.price.toLocaleString()}</Text>
           </View>
 
-          {/* Category and Weight */}
-          <View style={styles.metaSection}>
-            <View style={styles.metaItem}>
-              <Text style={styles.metaLabel}>Category</Text>
-              <Text style={styles.metaValue}>{listing.category}</Text>
+          {/* Quick Info */}
+          <View style={styles.quickInfo}>
+            <View style={styles.infoItem}>
+              <Tag size={16} color={Colors.gray600} />
+              <Text style={styles.infoText}>{listing.category}</Text>
             </View>
-            <View style={styles.metaItem}>
-              <Text style={styles.metaLabel}>Weight</Text>
-              <Text style={styles.metaValue}>{listing.weight}kg</Text>
+            <View style={styles.infoItem}>
+              <Package size={16} color={Colors.gray600} />
+              <Text style={styles.infoText}>{listing.weight}kg</Text>
+            </View>
+            <View style={styles.infoItem}>
+              <MapPin size={16} color={Colors.gray600} />
+              <Text style={styles.infoText}>{listing.location}</Text>
             </View>
           </View>
 
@@ -278,56 +277,55 @@ export default function ListingDetailScreen() {
             <Text style={styles.description}>{listing.description}</Text>
           </View>
 
-          {/* Location */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Location</Text>
-            <Text style={styles.location}>📍 {listing.location}</Text>
-          </View>
-
           {/* Seller Info */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Seller Information</Text>
-            <Text style={styles.sellerName}>{listing.seller_name}</Text>
-            <Text style={styles.listingDate}>
-              Listed on {new Date(listing.created_at).toLocaleDateString()}
-            </Text>
+            <View style={styles.sellerInfo}>
+              <View style={styles.sellerAvatar}>
+                <Text style={styles.sellerInitial}>
+                  {listing.seller_name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.sellerDetails}>
+                <Text style={styles.sellerName}>{listing.seller_name}</Text>
+                <Text style={styles.listingDate}>
+                  Listed on {new Date(listing.created_at).toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Contact Actions */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Contact Seller</Text>
+            <View style={styles.contactButtons}>
+              <TouchableOpacity
+                onPress={openWhatsApp}
+                style={styles.whatsappButton}
+              >
+                <MessageCircle size={20} color={Colors.white} />
+                <Text style={styles.whatsappButtonText}>WhatsApp</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={callSeller} style={styles.callButton}>
+                <Phone size={20} color={Colors.white} />
+                <Text style={styles.callButtonText}>Call</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </ScrollView>
 
-      {/* Bottom Actions */}
-      <View style={styles.bottomActions}>
-        <View style={styles.contactButtons}>
-          <TouchableOpacity
-            onPress={openWhatsApp}
-            style={styles.whatsappButton}
-          >
-            <Text style={styles.whatsappButtonText}>💬 WhatsApp</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={callSeller} style={styles.callButton}>
-            <Text style={styles.callButtonText}>📞 Call</Text>
-          </TouchableOpacity>
-        </View>
-
-        {listing.seller_id !== user?._id && (
-          <TouchableOpacity
+      {/* Bottom Purchase Button */}
+      {listing.seller_id !== user?._id && (
+        <View style={styles.bottomActions}>
+          <Button
+            title={`Purchase for ₦${listing.price.toLocaleString()}`}
             onPress={purchaseListing}
-            disabled={purchasing}
-            style={[
-              styles.purchaseButton,
-              purchasing && styles.purchaseButtonDisabled,
-            ]}
-          >
-            {purchasing ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.purchaseButtonText}>
-                Purchase for ₦{listing.price.toLocaleString()}
-              </Text>
-            )}
-          </TouchableOpacity>
-        )}
-      </View>
+            loading={purchasing}
+            style={styles.purchaseButton}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -335,73 +333,79 @@ export default function ListingDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.light,
+    backgroundColor: Colors.background,
   },
   loadingText: {
-    ...Typography.bodySmall,
+    ...Typography.body,
     color: Colors.gray600,
-    marginTop: Spacing.md,
+    marginTop: 16,
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.light,
-    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.background,
+    paddingHorizontal: 24,
   },
   errorText: {
-    ...Typography.h4,
+    ...Typography.h3,
     color: Colors.error,
     textAlign: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: 24,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray200,
+  },
+  headerTitle: {
+    ...Typography.h3,
+  },
+  backButton: {
+    padding: 4,
   },
   scrollView: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.white,
-  },
-  backButton: {
-    paddingVertical: Spacing.sm,
-  },
-  backButtonText: {
-    ...Typography.body,
-    color: Colors.primary,
-  },
   imageSection: {
     position: "relative",
+    backgroundColor: Colors.white,
   },
   listingImage: {
-    width: 400, // Approximate screen width
+    width: screenWidth,
     height: 300,
   },
   imagePlaceholder: {
     width: "100%",
     height: 300,
-    backgroundColor: Colors.gray200,
+    backgroundColor: Colors.gray100,
     alignItems: "center",
     justifyContent: "center",
   },
   imagePlaceholderText: {
-    fontSize: 48,
-    color: Colors.gray400,
+    ...Typography.body,
+    color: Colors.gray500,
+    marginTop: 8,
   },
   imageIndicators: {
     position: "absolute",
-    bottom: Spacing.md,
+    bottom: 16,
     left: 0,
     right: 0,
     flexDirection: "row",
     justifyContent: "center",
-    gap: Spacing.xs,
+    gap: 8,
   },
   imageIndicator: {
     width: 8,
@@ -415,110 +419,125 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.5)",
   },
   content: {
-    padding: Spacing.md,
+    padding: 20,
   },
   titleSection: {
-    marginBottom: Spacing.lg,
+    marginBottom: 20,
   },
   title: {
     ...Typography.h2,
-    color: Colors.accent,
-    marginBottom: Spacing.sm,
+    marginBottom: 8,
   },
   price: {
     ...Typography.h3,
     color: Colors.primary,
     fontWeight: "bold",
   },
-  metaSection: {
+  quickInfo: {
     flexDirection: "row",
-    marginBottom: Spacing.lg,
-    gap: Spacing.lg,
+    flexWrap: "wrap",
+    gap: 16,
+    marginBottom: 24,
+    padding: 16,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
   },
-  metaItem: {
-    flex: 1,
+  infoItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  metaLabel: {
-    ...Typography.caption,
-    color: Colors.gray600,
-    marginBottom: Spacing.xs,
-  },
-  metaValue: {
+  infoText: {
     ...Typography.body,
-    color: Colors.accent,
-    fontWeight: "600",
+    color: Colors.gray700,
   },
   section: {
-    marginBottom: Spacing.lg,
+    marginBottom: 24,
   },
   sectionTitle: {
     ...Typography.h4,
-    color: Colors.accent,
-    marginBottom: Spacing.sm,
+    marginBottom: 12,
   },
   description: {
     ...Typography.body,
     color: Colors.gray700,
     lineHeight: 24,
+    backgroundColor: Colors.white,
+    padding: 16,
+    borderRadius: 12,
   },
-  location: {
-    ...Typography.body,
-    color: Colors.gray700,
+  sellerInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.white,
+    padding: 16,
+    borderRadius: 12,
+  },
+  sellerAvatar: {
+    width: 48,
+    height: 48,
+    backgroundColor: Colors.primary,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  sellerInitial: {
+    ...Typography.h4,
+    color: Colors.white,
+  },
+  sellerDetails: {
+    flex: 1,
   },
   sellerName: {
-    ...Typography.body,
-    color: Colors.accent,
-    fontWeight: "600",
-    marginBottom: Spacing.xs,
+    ...Typography.bodySemiBold,
+    marginBottom: 4,
   },
   listingDate: {
     ...Typography.caption,
     color: Colors.gray500,
   },
-  bottomActions: {
-    padding: Spacing.md,
-    backgroundColor: Colors.white,
-    borderTopWidth: 1,
-    borderTopColor: Colors.gray200,
-  },
   contactButtons: {
     flexDirection: "row",
-    marginBottom: Spacing.md,
-    gap: Spacing.sm,
+    gap: 12,
   },
   whatsappButton: {
     flex: 1,
     backgroundColor: Colors.green500,
-    paddingVertical: Spacing.sm,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 12,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   whatsappButtonText: {
-    ...Typography.button,
+    ...Typography.bodySemiBold,
     color: Colors.white,
   },
   callButton: {
     flex: 1,
     backgroundColor: Colors.blue500,
-    paddingVertical: Spacing.sm,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 12,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   callButtonText: {
-    ...Typography.button,
+    ...Typography.bodySemiBold,
     color: Colors.white,
+  },
+  bottomActions: {
+    padding: 20,
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray200,
   },
   purchaseButton: {
-    backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  purchaseButtonDisabled: {
-    backgroundColor: Colors.gray400,
-  },
-  purchaseButtonText: {
-    ...Typography.button,
-    color: Colors.white,
+    marginBottom: 0,
   },
 });

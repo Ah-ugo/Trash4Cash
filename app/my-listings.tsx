@@ -1,6 +1,11 @@
 "use client";
 
+import { Colors, Typography } from "@/constants/Colors";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiService } from "@/services/api";
+import type { ApiListing } from "@/types/api";
 import { router } from "expo-router";
+import { Edit, Plus, Trash2 } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,27 +19,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../../contexts/AuthContext";
-import { Colors } from "../../styles/colors";
-import { Spacing } from "../../styles/spacing";
-import { Typography } from "../../styles/typography";
-
-interface Listing {
-  _id: string;
-  title: string;
-  description: string;
-  category: string;
-  price: number;
-  weight: number;
-  location: string;
-  images: string[];
-  status: "active" | "sold" | "banned" | "deleted";
-  created_at: string;
-}
 
 export default function MyListingsScreen() {
-  const { user, token } = useAuth();
-  const [listings, setListings] = useState<Listing[]>([]);
+  const { user } = useAuth();
+  const [listings, setListings] = useState<ApiListing[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -45,18 +33,10 @@ export default function MyListingsScreen() {
 
   const fetchMyListings = async () => {
     try {
-      const response = await fetch(
-        "https://trash4app-be.onrender.com/my-listings",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const data = await response.json();
+      const data = await apiService.getMyListings();
       setListings(data);
-    } catch (error) {
-      Alert.alert("Error", "Failed to fetch your listings");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to fetch your listings");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -80,28 +60,13 @@ export default function MyListingsScreen() {
           onPress: async () => {
             setDeleting(listingId);
             try {
-              const response = await fetch(
-                `https://trash4app-be.onrender.com/listings/${listingId}`,
-                {
-                  method: "DELETE",
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
+              await apiService.deleteListing(listingId);
+              setListings((prevListings) =>
+                prevListings.filter((listing) => listing._id !== listingId)
               );
-
-              if (response.ok) {
-                // Update the listings list
-                setListings((prevListings) =>
-                  prevListings.filter((listing) => listing._id !== listingId)
-                );
-                Alert.alert("Success", "Listing deleted successfully");
-              } else {
-                const data = await response.json();
-                Alert.alert("Error", data.detail || "Failed to delete listing");
-              }
-            } catch (error) {
-              Alert.alert("Error", "Failed to delete listing");
+              Alert.alert("Success", "Listing deleted successfully");
+            } catch (error: any) {
+              Alert.alert("Error", error.message || "Failed to delete listing");
             } finally {
               setDeleting(null);
             }
@@ -118,9 +83,9 @@ export default function MyListingsScreen() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
-        return Colors.green500;
+        return Colors.success;
       case "sold":
-        return Colors.blue500;
+        return Colors.info;
       case "banned":
         return Colors.error;
       case "deleted":
@@ -151,10 +116,11 @@ export default function MyListingsScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>My Listings</Text>
         <TouchableOpacity
-          onPress={() => router.push("/(tabs)/create")}
+          onPress={() => router.push("/(tabs)/sell")}
           style={styles.addButton}
         >
-          <Text style={styles.addButtonText}>+ Add New</Text>
+          <Plus size={20} color={Colors.white} />
+          <Text style={styles.addButtonText}>Add New</Text>
         </TouchableOpacity>
       </View>
 
@@ -179,7 +145,7 @@ export default function MyListingsScreen() {
               Create your first listing to start selling recyclable materials
             </Text>
             <TouchableOpacity
-              onPress={() => router.push("/(tabs)/create")}
+              onPress={() => router.push("/(tabs)/sell")}
               style={styles.createButton}
             >
               <Text style={styles.createButtonText}>Create Listing</Text>
@@ -252,6 +218,7 @@ export default function MyListingsScreen() {
                         onPress={() => editListing(listing._id)}
                         style={[styles.actionButton, styles.editButton]}
                       >
+                        <Edit size={16} color={Colors.white} />
                         <Text style={styles.editButtonText}>Edit</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -262,7 +229,10 @@ export default function MyListingsScreen() {
                         {deleting === listing._id ? (
                           <ActivityIndicator size="small" color="white" />
                         ) : (
-                          <Text style={styles.deleteButtonText}>Delete</Text>
+                          <>
+                            <Trash2 size={16} color={Colors.white} />
+                            <Text style={styles.deleteButtonText}>Delete</Text>
+                          </>
                         )}
                       </TouchableOpacity>
                     </View>
@@ -280,40 +250,39 @@ export default function MyListingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light,
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray200,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   title: {
     ...Typography.h2,
-    color: Colors.accent,
   },
   addButton: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
   },
   addButtonText: {
-    ...Typography.bodySmall,
+    ...Typography.caption,
     color: Colors.white,
-    fontWeight: "600",
+    marginLeft: 4,
+    fontFamily: "Inter-SemiBold",
   },
   listingsContainer: {
     flex: 1,
   },
   listingsContent: {
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xl,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
@@ -322,37 +291,36 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
   },
   loadingText: {
-    ...Typography.bodySmall,
+    ...Typography.body,
     color: Colors.gray500,
-    marginTop: Spacing.md,
+    marginTop: 16,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 80,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: 20,
   },
   emptyIcon: {
     fontSize: 48,
-    marginBottom: Spacing.md,
+    marginBottom: 16,
   },
   emptyTitle: {
     ...Typography.h3,
-    color: Colors.accent,
-    marginBottom: Spacing.sm,
+    marginBottom: 8,
   },
   emptyText: {
-    ...Typography.bodySmall,
+    ...Typography.body,
     color: Colors.gray500,
     textAlign: "center",
     lineHeight: 20,
-    marginBottom: Spacing.lg,
+    marginBottom: 24,
   },
   createButton: {
     backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
     borderRadius: 12,
   },
   createButtonText: {
@@ -360,37 +328,29 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   listingsGrid: {
-    paddingBottom: Spacing.lg,
-    gap: Spacing.md,
+    gap: 16,
   },
   listingCard: {
     backgroundColor: Colors.white,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    borderRadius: 16,
+    shadowColor: Colors.dark,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: Colors.gray100,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: "hidden",
   },
   listingImageContainer: {
     position: "relative",
+    height: 200,
   },
   listingImage: {
     width: "100%",
-    height: 200,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    height: "100%",
   },
   listingImagePlaceholder: {
     width: "100%",
-    height: 200,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    height: "100%",
     backgroundColor: Colors.gray200,
     alignItems: "center",
     justifyContent: "center",
@@ -401,49 +361,46 @@ const styles = StyleSheet.create({
   },
   statusBadge: {
     position: "absolute",
-    top: Spacing.sm,
-    right: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    top: 12,
+    right: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 12,
-    zIndex: 1,
   },
   statusText: {
     ...Typography.caption,
     color: Colors.white,
-    fontWeight: "600",
+    fontFamily: "Inter-SemiBold",
   },
   listingContent: {
-    padding: Spacing.md,
+    padding: 16,
   },
   listingHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: Spacing.sm,
+    marginBottom: 8,
   },
   listingTitle: {
     ...Typography.h4,
-    color: Colors.accent,
     flex: 1,
-    marginRight: Spacing.sm,
+    marginRight: 8,
   },
   listingPrice: {
     ...Typography.h4,
     color: Colors.primary,
-    fontWeight: "bold",
   },
   listingDescription: {
-    ...Typography.bodySmall,
+    ...Typography.body,
     color: Colors.gray600,
-    marginBottom: Spacing.md,
-    lineHeight: 18,
+    marginBottom: 12,
+    lineHeight: 20,
   },
   listingFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.sm,
+    marginBottom: 8,
   },
   listingLocation: {
     ...Typography.caption,
@@ -457,32 +414,36 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: Colors.gray400,
     fontStyle: "italic",
-    marginBottom: Spacing.sm,
+    marginBottom: 12,
   },
   actionButtons: {
     flexDirection: "row",
-    gap: Spacing.sm,
+    gap: 8,
   },
   actionButton: {
     flex: 1,
-    paddingVertical: Spacing.sm,
-    borderRadius: 8,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   editButton: {
-    backgroundColor: Colors.blue500,
+    backgroundColor: Colors.info,
   },
   editButtonText: {
-    ...Typography.bodySmall,
+    ...Typography.caption,
     color: Colors.white,
-    fontWeight: "600",
+    marginLeft: 4,
+    fontFamily: "Inter-SemiBold",
   },
   deleteButton: {
     backgroundColor: Colors.error,
   },
   deleteButtonText: {
-    ...Typography.bodySmall,
+    ...Typography.caption,
     color: Colors.white,
-    fontWeight: "600",
+    marginLeft: 4,
+    fontFamily: "Inter-SemiBold",
   },
 });

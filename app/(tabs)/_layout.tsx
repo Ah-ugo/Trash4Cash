@@ -1,40 +1,32 @@
-"use client";
-
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { Redirect, Tabs } from "expo-router";
-import type React from "react";
-import { useColorScheme } from "react-native";
-import { useAuth } from "../../contexts/AuthContext";
-import { Colors } from "../../styles/colors";
-
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>["name"];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
+import { Tabs } from "expo-router";
+import {
+  Chrome as Home,
+  CirclePlus as PlusCircle,
+  Search,
+  User,
+  Wallet,
+} from "lucide-react-native";
+import { Colors } from "../../constants/Colors";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return null; // Or a loading screen
-  }
-
-  if (!user) {
-    return <Redirect href="/auth" />;
-  }
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.gray600,
         headerShown: false,
         tabBarStyle: {
           backgroundColor: Colors.white,
+          borderTopWidth: 1,
           borderTopColor: Colors.gray200,
+          paddingTop: 8,
+          paddingBottom: 8,
+          height: 65,
+        },
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: Colors.gray400,
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontFamily: "Inter-Medium",
+          marginTop: 4,
         },
       }}
     >
@@ -42,44 +34,37 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          tabBarIcon: ({ size, color }) => <Home size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="listings"
+        name="search"
         options={{
-          title: "Browse",
-          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
+          title: "Search",
+          tabBarIcon: ({ size, color }) => <Search size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="create"
+        name="sell"
         options={{
           title: "Sell",
-          tabBarIcon: ({ color }) => <TabBarIcon name="plus" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="my-listings"
-        options={{
-          title: "My Items",
-          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
+          tabBarIcon: ({ size, color }) => (
+            <PlusCircle size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="wallet"
         options={{
           title: "Wallet",
-          tabBarIcon: ({ color }) => (
-            <TabBarIcon name="credit-card" color={color} />
-          ),
+          tabBarIcon: ({ size, color }) => <Wallet size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
+          tabBarIcon: ({ size, color }) => <User size={size} color={color} />,
         }}
       />
     </Tabs>

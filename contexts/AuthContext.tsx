@@ -1,35 +1,27 @@
+"use client";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import type React from "react";
 import { createContext, useContext, useEffect, useState } from "react";
-
-interface User {
-  _id: string;
-  email: string;
-  full_name: string;
-  phone: string;
-  role: "buyer" | "seller";
-  wallet_balance: number;
-  profile_image?: string;
-  whatsapp?: string;
-  city?: string;
-}
+import { apiService } from "../services/api";
+import type { ApiUser } from "../types/api";
 
 interface AuthContextType {
-  user: User | null;
+  user: ApiUser | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: any) => Promise<void>;
   logout: () => Promise<void>;
-  updateUser: (userData: Partial<User>) => void;
+  updateUser: (userData: Partial<ApiUser>) => void;
+  refreshUser: () => Promise<void>;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL = "https://trash4app-be.onrender.com";
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ApiUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -45,6 +37,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
+        // Refresh user data from API
+        try {
+          const freshUserData = await apiService.getProfile();
+          setUser(freshUserData);
+          await AsyncStorage.setItem(
+            "user_data",
+            JSON.stringify(freshUserData)
+          );
+        } catch (error) {
+          console.error("Error refreshing user data:", error);
+        }
       }
     } catch (error) {
       console.error("Error loading stored auth:", error);
@@ -55,25 +58,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await apiService.login(email, password);
 
-      const data = await response.json();
+      setToken(response.token);
+      setUser(response.user);
 
-      if (!response.ok) {
-        throw new Error(data.detail || "Login failed");
-      }
-
-      setToken(data.token);
-      setUser(data.user);
-
-      await AsyncStorage.setItem("auth_token", data.token);
-      await AsyncStorage.setItem("user_data", JSON.stringify(data.user));
+      await AsyncStorage.setItem("auth_token", response.token);
+      await AsyncStorage.setItem("user_data", JSON.stringify(response.user));
     } catch (error) {
       throw error;
     }
@@ -81,25 +72,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (userData: any) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
+      const response = await apiService.register(userData);
 
-      const data = await response.json();
+      setToken(response.token);
+      setUser(response.user);
 
-      if (!response.ok) {
-        throw new Error(data.detail || "Registration failed");
-      }
-
-      setToken(data.token);
-      setUser(data.user);
-
-      await AsyncStorage.setItem("auth_token", data.token);
-      await AsyncStorage.setItem("user_data", JSON.stringify(data.user));
+      await AsyncStorage.setItem("auth_token", response.token);
+      await AsyncStorage.setItem("user_data", JSON.stringify(response.user));
     } catch (error) {
       throw error;
     }
@@ -110,13 +89,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     await AsyncStorage.removeItem("auth_token");
     await AsyncStorage.removeItem("user_data");
+    router.push("/auth/login");
   };
 
-  const updateUser = (userData: Partial<User>) => {
+  const updateUser = (userData: Partial<ApiUser>) => {
     if (user) {
       const updatedUser = { ...user, ...userData };
       setUser(updatedUser);
       AsyncStorage.setItem("user_data", JSON.stringify(updatedUser));
+    }
+  };
+
+  const refreshUser = async () => {
+    try {
+      const freshUserData = await apiService.getProfile();
+      setUser(freshUserData);
+      await AsyncStorage.setItem("user_data", JSON.stringify(freshUserData));
+    } catch (error) {
+      console.error("Error refreshing user:", error);
+      throw error;
     }
   };
 
@@ -129,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         logout,
         updateUser,
+        refreshUser,
         isLoading,
       }}
     >

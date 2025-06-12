@@ -1,39 +1,37 @@
-import { useAuth } from "@/contexts/AuthContext";
-import { Colors } from "@/styles/colors";
-import { Spacing } from "@/styles/spacing";
-import { Typography } from "@/styles/typography";
-import { router } from "expo-router";
+"use client";
+
+import { useRouter } from "expo-router";
+import { ArrowLeft } from "lucide-react-native";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
+  SafeAreaView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import Button from "../../components/common/Button";
+import Input from "../../components/common/Input";
+import { Colors, Typography } from "../../constants/Colors";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function LoginScreen() {
+  const router = useRouter();
   const { login } = useAuth();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!formData.email || !formData.password) {
+    if (!email || !password) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
     setLoading(true);
     try {
-      await login(formData.email, formData.password);
+      await login(email, password);
       router.replace("/(tabs)");
     } catch (error: any) {
       Alert.alert("Login Failed", error.message || "Invalid credentials");
@@ -44,74 +42,59 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
-      >
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <Text style={styles.logoIcon}>♻️</Text>
-            </View>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>
-              Sign in to continue to Trash4Cash
-            </Text>
-          </View>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <ArrowLeft size={24} color={Colors.dark} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Sign In</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
-          {/* Form */}
-          <View style={styles.form}>
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Email Address</Text>
-              <TextInput
-                value={formData.email}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, email: text }))
-                }
-                placeholder="Enter your email"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                style={styles.textInput}
-              />
-            </View>
+      <View style={styles.content}>
+        <View style={styles.titleSection}>
+          <Text style={styles.title}>Welcome Back!</Text>
+          <Text style={styles.subtitle}>
+            Sign in to continue selling and buying scrap materials
+          </Text>
+        </View>
 
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Password</Text>
-              <TextInput
-                value={formData.password}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, password: text }))
-                }
-                placeholder="Enter your password"
-                secureTextEntry
-                style={styles.textInput}
-              />
-            </View>
-          </View>
+        <View style={styles.form}>
+          <Input
+            label="Email Address"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Enter your email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
 
-          {/* Login Button */}
-          <TouchableOpacity
-            onPress={handleLogin}
-            disabled={loading}
-            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.loginButtonText}>Sign In</Text>
-            )}
+          <Input
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Enter your password"
+            secureTextEntry
+          />
+
+          <TouchableOpacity style={styles.forgotPassword}>
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => router.push("/auth/register")}>
-              <Text style={styles.footerLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
+          <Button
+            title="Sign In"
+            onPress={handleLogin}
+            loading={loading}
+            style={styles.loginButton}
+          />
         </View>
-      </KeyboardAvoidingView>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Don't have an account? </Text>
+          <TouchableOpacity onPress={() => router.push("/auth/register")}>
+            <Text style={styles.footerLink}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -119,87 +102,59 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light,
+    backgroundColor: Colors.background,
   },
-  keyboardView: {
-    flex: 1,
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  headerTitle: {
+    ...Typography.h3,
   },
   content: {
     flex: 1,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xl,
+    paddingHorizontal: 24,
   },
-  header: {
-    alignItems: "center",
-    marginBottom: Spacing.xl,
-  },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    backgroundColor: Colors.primary,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.md,
-  },
-  logoIcon: {
-    fontSize: 32,
+  titleSection: {
+    marginBottom: 32,
   },
   title: {
-    ...Typography.h1,
-    color: Colors.accent,
+    ...Typography.h2,
+    marginBottom: 8,
   },
   subtitle: {
-    ...Typography.bodySmall,
+    ...Typography.body,
     color: Colors.gray600,
-    marginTop: Spacing.sm,
   },
   form: {
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
+    flex: 1,
   },
-  field: {
-    marginBottom: Spacing.md,
+  forgotPassword: {
+    alignSelf: "flex-end",
+    marginBottom: 24,
   },
-  fieldLabel: {
-    ...Typography.caption,
-    color: Colors.gray600,
-    marginBottom: Spacing.sm,
-  },
-  textInput: {
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
-    borderRadius: 12,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+  forgotPasswordText: {
     ...Typography.body,
+    color: Colors.primary,
   },
   loginButton: {
-    backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md,
-    borderRadius: 12,
-    alignItems: "center",
-    marginBottom: Spacing.lg,
-  },
-  loginButtonDisabled: {
-    backgroundColor: Colors.gray400,
-  },
-  loginButtonText: {
-    ...Typography.button,
-    color: Colors.white,
+    marginBottom: 24,
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
+    alignItems: "center",
+    paddingBottom: 40,
   },
   footerText: {
-    ...Typography.bodySmall,
+    ...Typography.body,
     color: Colors.gray600,
   },
   footerLink: {
-    ...Typography.bodySmall,
+    ...Typography.bodySemiBold,
     color: Colors.primary,
-    fontWeight: "bold",
   },
 });
