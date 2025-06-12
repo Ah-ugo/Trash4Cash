@@ -4,6 +4,7 @@ import { MapPin } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   Alert,
+  Dimensions,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -83,16 +84,9 @@ export default function HomeScreen() {
         <View style={styles.headerLeft}>
           <Text style={styles.greeting}>Good morning! 👋</Text>
           <View style={styles.locationRow}>
-            {/* <MapPin size={16} color={Colors.gray500} /> */}
             <Text style={styles.location}>{user?.full_name}</Text>
           </View>
         </View>
-        {/* <TouchableOpacity style={styles.notificationButton}>
-          <Bell size={24} color={Colors.dark} />
-          <View style={styles.notificationBadge}>
-            <Text style={styles.notificationCount}>3</Text>
-          </View>
-        </TouchableOpacity> */}
         <View style={styles.locationRow}>
           <MapPin size={16} color={Colors.gray500} />
           <Text style={styles.location}>{user?.city || "Nigeria"}</Text>
@@ -124,13 +118,22 @@ export default function HomeScreen() {
         {featuredItems.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Featured Items</Text>
-            {featuredItems.map((item) => (
-              <ScrapItemCard
-                key={item._id}
-                item={convertToScrapItem(item)}
-                onPress={() => router.push(`/listing/${item._id}`)}
-              />
-            ))}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.horizontalScroll}
+              contentContainerStyle={styles.scrollContent}
+            >
+              {featuredItems.map((item) => (
+                <ScrapItemCard
+                  key={item._id}
+                  item={convertToScrapItem(item)}
+                  onPress={() => router.push(`/listing/${item._id}`)}
+                  styleObj={styles.featuredCard}
+                  isFeatured={true}
+                />
+              ))}
+            </ScrollView>
           </View>
         )}
 
@@ -158,6 +161,8 @@ export default function HomeScreen() {
                 key={item._id}
                 item={convertToScrapItem(item)}
                 onPress={() => router.push(`/listing/${item._id}`)}
+                styleObj={styles.recentCard}
+                isFeatured={false}
               />
             ))
           )}
@@ -169,6 +174,8 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
+
+const windowWidth = Dimensions.get("window").width;
 
 const styles = StyleSheet.create({
   container: {
@@ -199,26 +206,6 @@ const styles = StyleSheet.create({
     color: Colors.gray600,
     marginLeft: 4,
   },
-  notificationButton: {
-    position: "relative",
-    padding: 8,
-  },
-  notificationBadge: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    backgroundColor: Colors.secondary,
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  notificationCount: {
-    color: Colors.white,
-    fontSize: 10,
-    fontFamily: "Inter-SemiBold",
-  },
   welcomeSection: {
     paddingHorizontal: 20,
     marginBottom: 8,
@@ -238,6 +225,22 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...Typography.h3,
+    marginBottom: 16,
+  },
+  horizontalScroll: {
+    paddingHorizontal: 5,
+  },
+  scrollContent: {
+    paddingHorizontal: 5,
+    flexDirection: "row",
+  },
+  featuredCard: {
+    marginHorizontal: 8,
+    width: Math.min(Math.max(250, windowWidth * 0.7), 320),
+  },
+  recentCard: {
+    width: Math.min(Math.max(300, windowWidth * 0.9), 400),
+    marginHorizontal: "auto",
     marginBottom: 16,
   },
   loadingState: {
