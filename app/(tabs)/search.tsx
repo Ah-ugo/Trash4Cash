@@ -1,6 +1,7 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
+import { VerticalScrapCard } from "@/components/home/VerticalScrapCard";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -14,7 +15,6 @@ import {
 } from "react-native";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
-import ScrapItemCard from "../../components/home/ScrapItemCard";
 import { Colors, Typography } from "../../constants/Colors";
 import { SCRAP_CATEGORIES } from "../../constants/ScrapCategories";
 import { apiService } from "../../services/api";
@@ -296,7 +296,7 @@ export default function SearchScreen() {
         ) : (
           <View style={styles.itemsList}>
             {filteredItems.map((item) => (
-              <ScrapItemCard
+              <VerticalScrapCard
                 key={item._id}
                 item={convertToScrapItem(item)}
                 onPress={() => router.push(`/listing/${item._id}`)}

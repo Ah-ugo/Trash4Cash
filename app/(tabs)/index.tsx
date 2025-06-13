@@ -21,6 +21,13 @@ import { useAuth } from "../../contexts/AuthContext";
 import { apiService } from "../../services/api";
 import type { ScrapCategory } from "../../types";
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning! 👋";
+  if (hour < 18) return "Good afternoon! 👋";
+  return "Good evening! 👋";
+};
+
 export default function HomeScreen() {
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<
@@ -86,7 +93,7 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.greeting}>Good morning! 👋</Text>
+          <Text style={styles.greeting}>{getGreeting()}</Text>
           <View style={styles.locationRow}>
             <Text style={styles.location}>{user?.full_name}</Text>
           </View>

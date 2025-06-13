@@ -11,7 +11,7 @@ import {
 } from "react-native";
 
 interface ApiListing {
-  _id: string;
+  id: string;
   title: string;
   description: string;
   category: string;
@@ -21,12 +21,15 @@ interface ApiListing {
   latitude: number;
   longitude: number;
   whatsapp: string;
-  seller_id: string;
-  seller_name: string;
-  seller_phone: string;
+  seller: {
+    id: string;
+    name: string;
+    isVerified: boolean;
+    profileImage: string;
+  };
   images: string[];
   status: string;
-  created_at: string;
+  datePosted: string;
 }
 
 interface ScrapItemCardProps {
