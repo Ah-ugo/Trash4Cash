@@ -1,7 +1,6 @@
-"use client";
-
+import { AntDesign } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+
 import { useState } from "react";
 import {
   Alert,
@@ -44,7 +43,7 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color={Colors.dark} />
+          <AntDesign name="arrowleft" size={24} color={Colors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Sign In</Text>
         <View style={{ width: 24 }} />
@@ -109,7 +108,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingBottom: 16,
+    paddingTop: 50,
   },
   headerTitle: {
     ...Typography.h3,
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingBottom: 40,
+    paddingBottom: 60,
   },
   footerText: {
     ...Typography.body,

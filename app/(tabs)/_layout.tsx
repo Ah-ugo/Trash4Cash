@@ -1,11 +1,5 @@
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import {
-  Chrome as Home,
-  CirclePlus as PlusCircle,
-  Search,
-  User,
-  Wallet,
-} from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 
 export default function TabLayout() {
@@ -17,9 +11,6 @@ export default function TabLayout() {
           backgroundColor: Colors.white,
           borderTopWidth: 1,
           borderTopColor: Colors.gray200,
-          // paddingTop: 8,
-          // paddingBottom: 8,
-          // height: 65,
         },
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.gray400,
@@ -34,14 +25,22 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ size, color }) => <Home size={size} color={color} />,
+          tabBarIcon: ({ size, color }) => (
+            <MaterialCommunityIcons
+              name="google-chrome"
+              size={size}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
           title: "Search",
-          tabBarIcon: ({ size, color }) => <Search size={size} color={color} />,
+          tabBarIcon: ({ size, color }) => (
+            <Feather name="search" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -49,7 +48,7 @@ export default function TabLayout() {
         options={{
           title: "Sell",
           tabBarIcon: ({ size, color }) => (
-            <PlusCircle size={size} color={color} />
+            <Ionicons name="add-circle-outline" size={size} color={color} />
           ),
         }}
       />
@@ -57,14 +56,22 @@ export default function TabLayout() {
         name="wallet"
         options={{
           title: "Wallet",
-          tabBarIcon: ({ size, color }) => <Wallet size={size} color={color} />,
+          tabBarIcon: ({ size, color }) => (
+            <MaterialCommunityIcons
+              name="wallet-outline"
+              size={size}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ size, color }) => <User size={size} color={color} />,
+          tabBarIcon: ({ size, color }) => (
+            <Feather name="user" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>

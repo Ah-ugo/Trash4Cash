@@ -1,6 +1,6 @@
-"use client";
+import Feather from "@expo/vector-icons/Feather";
 
-import { ArrowDownLeft, ArrowUpRight, CreditCard } from "lucide-react-native";
+import { FontAwesome } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -181,15 +181,25 @@ export default function WalletScreen() {
   const getTransactionIcon = (type: ApiTransaction["type"]) => {
     switch (type) {
       case "wallet_topup":
-        return <ArrowDownLeft size={20} color={Colors.success} />;
+        return (
+          <Feather name="arrow-down-left" size={20} color={Colors.success} />
+        );
       case "withdrawal":
-        return <ArrowUpRight size={20} color={Colors.warning} />;
+        return (
+          <Feather name="arrow-up-right" size={20} color={Colors.warning} />
+        );
       case "purchase":
-        return <CreditCard size={20} color={Colors.error} />;
+        return (
+          <FontAwesome name="credit-card" size={20} color={Colors.error} />
+        );
       case "sale":
-        return <CreditCard size={20} color={Colors.success} />;
+        return (
+          <FontAwesome name="credit-card" size={20} color={Colors.success} />
+        );
       default:
-        return <CreditCard size={20} color={Colors.primary} />;
+        return (
+          <FontAwesome name="credit-card" size={20} color={Colors.primary} />
+        );
     }
   };
 

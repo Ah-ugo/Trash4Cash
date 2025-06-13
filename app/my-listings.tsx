@@ -4,8 +4,9 @@ import { Colors, Typography } from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiService } from "@/services/api";
 import type { ApiListing } from "@/types/api";
+import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Edit, Plus, Trash2 } from "lucide-react-native";
+
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -119,7 +120,9 @@ export default function MyListingsScreen() {
           onPress={() => router.push("/(tabs)/sell")}
           style={styles.addButton}
         >
-          <Plus size={20} color={Colors.white} />
+          <Feather name="plus" size={20} color={Colors.white} />
+
+          {/* <Plus size={20} color={Colors.white} /> */}
           <Text style={styles.addButtonText}>Add New</Text>
         </TouchableOpacity>
       </View>
@@ -218,7 +221,9 @@ export default function MyListingsScreen() {
                         onPress={() => editListing(listing._id)}
                         style={[styles.actionButton, styles.editButton]}
                       >
-                        <Edit size={16} color={Colors.white} />
+                        <Feather name="edit" size={16} color={Colors.white} />
+
+                        {/* <Edit size={16} color={Colors.white} /> */}
                         <Text style={styles.editButtonText}>Edit</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -230,7 +235,13 @@ export default function MyListingsScreen() {
                           <ActivityIndicator size="small" color="white" />
                         ) : (
                           <>
-                            <Trash2 size={16} color={Colors.white} />
+                            <Feather
+                              name="trash-2"
+                              size={16}
+                              color={Colors.white}
+                            />
+
+                            {/* <Trash2 size={16} color={Colors.white} /> */}
                             <Text style={styles.deleteButtonText}>Delete</Text>
                           </>
                         )}

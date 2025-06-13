@@ -13,9 +13,10 @@ class ApiService {
   ): Promise<any> {
     const token = await this.getAuthToken();
 
-    const headers: HeadersInit = {
+    // Explicitly define headers as Record<string, string>
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     if (token) {
@@ -87,7 +88,7 @@ class ApiService {
     const response = await fetch(`${API_BASE_URL}/profile/upload-image`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`, // No error here since it's a new object
       },
       body: formData,
     });

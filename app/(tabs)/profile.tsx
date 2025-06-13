@@ -1,17 +1,5 @@
-"use client";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 
-import {
-  Camera,
-  Edit3,
-  HelpCircle,
-  Info,
-  LogOut,
-  MapPin,
-  MessageCircle,
-  Phone,
-  Settings,
-  User,
-} from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -163,11 +151,11 @@ export default function ProfileScreen() {
                 />
               ) : (
                 <View style={styles.avatarPlaceholder}>
-                  <User size={32} color={Colors.gray400} />
+                  <Feather name="user" size={32} color={Colors.gray400} />
                 </View>
               )}
               <TouchableOpacity style={styles.cameraButton}>
-                <Camera size={16} color={Colors.white} />
+                <Feather name="camera" size={16} color={Colors.white} />
               </TouchableOpacity>
             </View>
             <View style={styles.profileInfo}>
@@ -183,25 +171,25 @@ export default function ProfileScreen() {
               style={styles.editButton}
               onPress={() => setShowEditProfile(true)}
             >
-              <Edit3 size={20} color={Colors.primary} />
+              <Feather name="edit-2" size={20} color={Colors.primary} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.profileDetails}>
             <View style={styles.profileDetailItem}>
-              <Phone size={16} color={Colors.gray500} />
+              <Feather name="phone" size={16} color={Colors.gray500} />
               <Text style={styles.profileDetailText}>
                 {user?.phone || "Not provided"}
               </Text>
             </View>
             <View style={styles.profileDetailItem}>
-              <MessageCircle size={16} color={Colors.gray500} />
+              <FontAwesome name="whatsapp" size={16} color={Colors.gray500} />
               <Text style={styles.profileDetailText}>
                 {user?.whatsapp || "Not provided"}
               </Text>
             </View>
             <View style={styles.profileDetailItem}>
-              <MapPin size={16} color={Colors.gray500} />
+              <Feather name="map-pin" size={16} color={Colors.gray500} />
               <Text style={styles.profileDetailText}>
                 {user?.city || "Not provided"}
               </Text>
@@ -319,7 +307,7 @@ export default function ProfileScreen() {
         <View style={styles.menuSection}>
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <Settings size={20} color={Colors.gray600} />
+              <Feather name="settings" size={20} color={Colors.gray600} />
               <Text style={styles.menuItemText}>Settings</Text>
             </View>
           </TouchableOpacity>
@@ -329,7 +317,7 @@ export default function ProfileScreen() {
             onPress={() => setShowSupport(true)}
           >
             <View style={styles.menuItemLeft}>
-              <HelpCircle size={20} color={Colors.gray600} />
+              <Feather name="help-circle" size={20} color={Colors.gray600} />
               <Text style={styles.menuItemText}>Help & Support</Text>
             </View>
           </TouchableOpacity>
@@ -339,7 +327,7 @@ export default function ProfileScreen() {
             onPress={() => setShowAbout(true)}
           >
             <View style={styles.menuItemLeft}>
-              <Info size={20} color={Colors.gray600} />
+              <Feather name="info" size={20} color={Colors.gray600} />
               <Text style={styles.menuItemText}>About</Text>
             </View>
           </TouchableOpacity>
@@ -349,7 +337,7 @@ export default function ProfileScreen() {
             onPress={handleLogout}
           >
             <View style={styles.menuItemLeft}>
-              <LogOut size={20} color={Colors.error} />
+              <Feather name="log-out" size={20} color={Colors.error} />
               <Text style={[styles.menuItemText, styles.logoutText]}>
                 Logout
               </Text>

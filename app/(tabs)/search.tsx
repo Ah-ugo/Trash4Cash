@@ -1,7 +1,6 @@
-"use client";
-
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Filter, Search as SearchIcon, X } from "lucide-react-native";
+
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -135,7 +134,7 @@ export default function SearchScreen() {
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
-          <SearchIcon size={20} color={Colors.gray400} />
+          <Feather name="search" size={20} color={Colors.gray400} />
           <Input
             value={searchQuery}
             marginBottom
@@ -151,7 +150,8 @@ export default function SearchScreen() {
           ]}
           onPress={() => setShowFilters(!showFilters)}
         >
-          <Filter
+          <Feather
+            name="filter"
             size={20}
             color={activeFiltersCount > 0 ? Colors.white : Colors.dark}
           />
@@ -169,7 +169,7 @@ export default function SearchScreen() {
           <View style={styles.filtersPanelHeader}>
             <Text style={styles.filtersPanelTitle}>Filters</Text>
             <TouchableOpacity onPress={() => setShowFilters(false)}>
-              <X size={24} color={Colors.dark} />
+              <Ionicons name="close-circle" size={24} color={Colors.dark} />
             </TouchableOpacity>
           </View>
 

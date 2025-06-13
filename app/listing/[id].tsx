@@ -1,14 +1,6 @@
-"use client";
-
+import { Feather } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  ArrowLeft,
-  MapPin,
-  MessageCircle,
-  Package,
-  Phone,
-  Tag,
-} from "lucide-react-native";
+
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -187,7 +179,7 @@ export default function ListingDetailScreen() {
           onPress={() => router.back()}
           style={styles.backButton}
         >
-          <ArrowLeft size={24} color={Colors.dark} />
+          <Feather name="arrow-left" size={24} color={Colors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Item Details</Text>
         <View style={{ width: 24 }} />
@@ -239,7 +231,7 @@ export default function ListingDetailScreen() {
             </>
           ) : (
             <View style={styles.imagePlaceholder}>
-              <Package size={48} color={Colors.gray400} />
+              <Feather name="package" size={16} color={Colors.gray600} />
               <Text style={styles.imagePlaceholderText}>
                 No image available
               </Text>
@@ -258,15 +250,15 @@ export default function ListingDetailScreen() {
           {/* Quick Info */}
           <View style={styles.quickInfo}>
             <View style={styles.infoItem}>
-              <Tag size={16} color={Colors.gray600} />
+              <Feather name="tag" size={16} color={Colors.gray600} />
               <Text style={styles.infoText}>{listing.category}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Package size={16} color={Colors.gray600} />
+              <Feather name="package" size={16} color={Colors.gray600} />
               <Text style={styles.infoText}>{listing.weight}kg</Text>
             </View>
             <View style={styles.infoItem}>
-              <MapPin size={16} color={Colors.gray600} />
+              <Feather name="map-pin" size={16} color={Colors.gray600} />
               <Text style={styles.infoText}>{listing.location}</Text>
             </View>
           </View>
@@ -303,11 +295,11 @@ export default function ListingDetailScreen() {
                 onPress={openWhatsApp}
                 style={styles.whatsappButton}
               >
-                <MessageCircle size={20} color={Colors.white} />
+                <Feather name="message-circle" size={20} color={Colors.white} />
                 <Text style={styles.whatsappButtonText}>WhatsApp</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={callSeller} style={styles.callButton}>
-                <Phone size={20} color={Colors.white} />
+                <Feather name="phone" size={20} color={Colors.white} />
                 <Text style={styles.callButtonText}>Call</Text>
               </TouchableOpacity>
             </View>

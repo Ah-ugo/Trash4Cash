@@ -1,9 +1,7 @@
-"use client";
-
+import { Feather, Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { router } from "expo-router";
-import { Camera, MapPin, Plus, X } from "lucide-react-native";
 import { useState } from "react";
 import {
   Alert,
@@ -217,7 +215,11 @@ export default function SellScreen() {
                   style={styles.removeImageButton}
                   onPress={() => removeImage(index)}
                 >
-                  <X size={16} color={Colors.white} />
+                  <Ionicons
+                    name="close-circle"
+                    size={16}
+                    color={Colors.white}
+                  />
                 </TouchableOpacity>
               </View>
             ))}
@@ -228,14 +230,14 @@ export default function SellScreen() {
                   style={styles.addImageButton}
                   onPress={pickImage}
                 >
-                  <Plus size={24} color={Colors.gray400} />
+                  <Feather name="image" size={24} color={Colors.gray400} />
                   <Text style={styles.addImageText}>Gallery</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.addImageButton}
                   onPress={takePhoto}
                 >
-                  <Camera size={24} color={Colors.gray400} />
+                  <Feather name="camera" size={24} color={Colors.gray400} />
                   <Text style={styles.addImageText}>Camera</Text>
                 </TouchableOpacity>
               </View>
@@ -334,7 +336,7 @@ export default function SellScreen() {
               onPress={getCurrentLocation}
               style={styles.locationButton}
             >
-              <MapPin size={20} color={Colors.white} />
+              <Feather name="map-pin" size={20} color={Colors.white} />
             </TouchableOpacity>
           </View>
 

@@ -27,7 +27,7 @@ export default function WelcomeScreen() {
           </Text>
         </View>
 
-        <View style={styles.buttonSection}>
+        <SafeAreaView style={styles.buttonSection}>
           <Button
             title="Get Started"
             onPress={() => router.push("/auth/register")}
@@ -40,7 +40,7 @@ export default function WelcomeScreen() {
             variant="outline"
             style={styles.secondaryButton}
           />
-        </View>
+        </SafeAreaView>
       </View>
     </SafeAreaView>
   );
@@ -106,6 +106,7 @@ const styles = StyleSheet.create({
   },
   buttonSection: {
     gap: 16,
+    marginBottom: 20,
   },
   primaryButton: {
     marginBottom: 0,

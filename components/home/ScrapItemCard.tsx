@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Weight } from "lucide-react-native";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import {
   Dimensions,
@@ -78,15 +78,19 @@ export default function ScrapItemCard({
           ]}
         >
           <View style={[styles.detailRow, !isFeatured && styles.detailRowFlex]}>
-            <Weight size={14} color={Colors.gray500} />
+            <MaterialCommunityIcons
+              name="weight-kilogram"
+              size={14}
+              color={Colors.gray500}
+            />
             <Text style={styles.detailText}>{item.weight}kg</Text>
           </View>
           <View style={[styles.detailRow, !isFeatured && styles.detailRowFlex]}>
-            <MapPin size={14} color={Colors.gray500} />
+            <Feather name="map-pin" size={14} color={Colors.gray500} />
             <Text style={styles.detailText}>{item.location}</Text>
           </View>
           <View style={[styles.detailRow, !isFeatured && styles.detailRowFlex]}>
-            <Calendar size={14} color={Colors.gray500} />
+            <Feather name="calendar" size={14} color={Colors.gray500} />
             <Text style={styles.detailText}>{formatDate(item.datePosted)}</Text>
           </View>
         </View>

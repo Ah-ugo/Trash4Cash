@@ -1,6 +1,9 @@
 import type { ApiListing } from "@/types/api";
 import { router } from "expo-router";
-import { MapPin } from "lucide-react-native";
+// import { MapPin } from "@expo/vector-icons";
+import { HorizontalScrapCard } from "@/components/home/HorizontalScrapCard";
+import { VerticalScrapCard } from "@/components/home/VerticalScrapCard";
+import Feather from "@expo/vector-icons/Feather";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -13,7 +16,6 @@ import {
   View,
 } from "react-native";
 import CategoryFilter from "../../components/home/CategoryFilter";
-import ScrapItemCard from "../../components/home/ScrapItemCard";
 import { Colors, Typography } from "../../constants/Colors";
 import { useAuth } from "../../contexts/AuthContext";
 import { apiService } from "../../services/api";
@@ -38,6 +40,7 @@ export default function HomeScreen() {
         ? { category: selectedCategory, limit: 20 }
         : { limit: 20 };
       const data = await apiService.getListings(params);
+      console.log(data, "listings===");
       setListings(data);
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to fetch listings");
@@ -56,6 +59,7 @@ export default function HomeScreen() {
     .filter((item) => item.status === "active")
     .slice(0, 3);
   const filteredItems = listings.filter((item) => item.status === "active");
+  console.log(filteredItems, "filterd ===");
 
   const convertToScrapItem = (apiListing: ApiListing) => ({
     id: apiListing._id,
@@ -88,7 +92,8 @@ export default function HomeScreen() {
           </View>
         </View>
         <View style={styles.locationRow}>
-          <MapPin size={16} color={Colors.gray500} />
+          {/* <MapPin size={16} color={Colors.gray500} /> */}
+          <Feather name="map-pin" size={16} color={Colors.gray500} />
           <Text style={styles.location}>{user?.city || "Nigeria"}</Text>
         </View>
       </View>
@@ -125,12 +130,12 @@ export default function HomeScreen() {
               contentContainerStyle={styles.scrollContent}
             >
               {featuredItems.map((item) => (
-                <ScrapItemCard
+                <HorizontalScrapCard
                   key={item._id}
                   item={convertToScrapItem(item)}
                   onPress={() => router.push(`/listing/${item._id}`)}
-                  styleObj={styles.featuredCard}
-                  isFeatured={true}
+                  // styleObj={styles.featuredCard}
+                  // isFeatured={true}
                 />
               ))}
             </ScrollView>
@@ -157,7 +162,7 @@ export default function HomeScreen() {
             </View>
           ) : (
             filteredItems.map((item) => (
-              <ScrapItemCard
+              <VerticalScrapCard
                 key={item._id}
                 item={convertToScrapItem(item)}
                 onPress={() => router.push(`/listing/${item._id}`)}
