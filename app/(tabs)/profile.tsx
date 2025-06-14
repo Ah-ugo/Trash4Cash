@@ -1,9 +1,11 @@
 import { Feather, FontAwesome } from "@expo/vector-icons";
-
+import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import {
+  ActionSheetIOS,
   Alert,
   Image,
+  Platform,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -34,6 +36,7 @@ export default function ProfileScreen() {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [editData, setEditData] = useState({
     full_name: user?.full_name || "",
     phone: user?.phone || "",
@@ -43,7 +46,20 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     fetchUserStats();
+    requestPermissions();
   }, []);
+
+  const requestPermissions = async () => {
+    // Request camera and media library permissions
+    const { status: cameraStatus } =
+      await ImagePicker.requestCameraPermissionsAsync();
+    const { status: mediaStatus } =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (cameraStatus !== "granted" || mediaStatus !== "granted") {
+      console.log("Permissions not granted");
+    }
+  };
 
   const fetchUserStats = async () => {
     try {
@@ -87,6 +103,89 @@ export default function ProfileScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     Promise.all([refreshUser(), fetchUserStats()]);
+  };
+
+  const handleImageUpload = () => {
+    const options = ["Take Photo", "Choose from Gallery", "Cancel"];
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex: 2,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            openCamera();
+          } else if (buttonIndex === 1) {
+            openGallery();
+          }
+        }
+      );
+    } else {
+      Alert.alert("Select Image", "Choose how you want to select an image", [
+        { text: "Camera", onPress: openCamera },
+        { text: "Gallery", onPress: openGallery },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }
+  };
+
+  const openCamera = async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        uploadProfileImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error opening camera:", error);
+      Alert.alert("Error", "Failed to open camera");
+    }
+  };
+
+  const openGallery = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        uploadProfileImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error opening gallery:", error);
+      Alert.alert("Error", "Failed to open gallery");
+    }
+  };
+
+  const uploadProfileImage = async (imageUri: string) => {
+    setUploading(true);
+    try {
+      const response = await apiService.uploadProfileImage(imageUri);
+
+      // Update user context with new profile image
+      if (response.profile_image_url) {
+        updateUser({
+          ...user,
+          profile_image: response.profile_image_url,
+        });
+        Alert.alert("Success", "Profile picture updated successfully");
+      }
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      Alert.alert("Error", error.message || "Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleLogout = () => {
@@ -154,8 +253,21 @@ export default function ProfileScreen() {
                   <Feather name="user" size={32} color={Colors.gray400} />
                 </View>
               )}
-              <TouchableOpacity style={styles.cameraButton}>
-                <Feather name="camera" size={16} color={Colors.white} />
+              <TouchableOpacity
+                style={[
+                  styles.cameraButton,
+                  uploading && styles.cameraButtonDisabled,
+                ]}
+                onPress={handleImageUpload}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <View style={styles.uploadingIndicator}>
+                    <Text style={styles.uploadingText}>...</Text>
+                  </View>
+                ) : (
+                  <Feather name="camera" size={16} color={Colors.white} />
+                )}
               </TouchableOpacity>
             </View>
             <View style={styles.profileInfo}>
@@ -469,6 +581,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
+  },
+  cameraButtonDisabled: {
+    backgroundColor: Colors.gray400,
+  },
+  uploadingIndicator: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  uploadingText: {
+    color: Colors.white,
+    fontSize: 12,
+    fontWeight: "bold",
   },
   profileInfo: {
     flex: 1,
