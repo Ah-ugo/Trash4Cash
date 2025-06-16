@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   buttonSection: {
     gap: 16,
-    marginBottom: 20,
+    marginBottom: 50,
   },
   primaryButton: {
     marginBottom: 0,
@@ -127,6 +127,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    marginBottom: 50,
   },
   badgeText: {
     fontSize: 10,
