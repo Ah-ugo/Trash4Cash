@@ -42,6 +42,11 @@ export default function WelcomeScreen() {
           />
         </SafeAreaView>
       </View>
+
+      {/* Built with bolt.new badge */}
+      <View style={styles.badgeContainer}>
+        <Text style={styles.badgeText}>Built with bolt.new</Text>
+      </View>
     </SafeAreaView>
   );
 }
@@ -113,5 +118,19 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     marginBottom: 0,
+  },
+  badgeContainer: {
+    position: "absolute",
+    bottom: 10,
+    right: 16,
+    backgroundColor: Colors.gray100,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  badgeText: {
+    fontSize: 10,
+    color: Colors.gray600,
+    fontWeight: "500",
   },
 });
